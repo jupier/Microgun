@@ -23,4 +23,30 @@ defmodule Microgun do
 
   end
 
+
+   def getNTimes() do
+
+     Call.exec(5, get 'http://google.com')
+
+   end
+
+
+end
+
+
+defmodule Call do
+
+    def exec(times, func) when (times > 0)do
+
+     func
+     exec(times - 1, func)
+
+    end
+
+    def exec(0) do
+
+      false
+
+    end
+
 end
