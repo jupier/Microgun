@@ -15,4 +15,12 @@ defmodule Microgun do
   def hello do
     :world
   end
+
+
+  def get(url) do
+
+    :ibrowse.send_req(url, [], :get)
+
+  end
+
 end
