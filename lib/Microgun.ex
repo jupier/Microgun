@@ -1,52 +1,56 @@
 defmodule Microgun do
-  @moduledoc """
-  Documentation for Microgun.
-  """
 
-  @doc """
-  Hello world.
+    import Supervisor.Spec
 
-  ## Examples
+    @version '0.0.1'
 
-      iex> Microgun.hello
-      :world
+    @method :get
 
-  """
-  def hello do
-    :world
-  end
+    @headers [
+        ['test', 'test']
+    ]
 
+    @url 'http://google.com'
 
-  def get(url) do
+    @responses []
 
-    :ibrowse.send_req(url, [], :get)
+    defmodule Holes do
+        defstruct [:id, :status, :code, :data]
+    end
 
-  end
+    def test do
+        test(10)
+    end
 
+    def test(times) do
+        IO.puts 'Microgun is going to test #{@url} #{times} times....'
 
-   def getNTimes() do
+        {:ok, pid} = Task.Supervisor.start_link()
+        children = [
+            supervisor(Task.Supervisor, [[name: Microgun.TaskSupervisor]])
+        ]
 
-     Call.exec(5, get 'http://google.com')
+        exec(times, RequestUtils.get(@url, []))
+            |> Task.yield_many
+            |> Enum.map(fn {task, res} -> parseResponse(task, res) end)
+    end
 
-   end
+    defp parseResponse(task, res) do
 
-
-end
-
-
-defmodule Call do
-
-    def exec(times, func) when (times > 0)do
-
-     func
-     exec(times - 1, func)
+        case res do
+            {:ok, data} ->
+                %Holes{id: task.ref, status: :ok, code: elem(data, 1), data: elem(data, 3)}
+            {:ko, data} ->
+                %Holes{id: task.ref, status: :ko, code: elem(data, 1), data: elem(data, 3)}
+        end
 
     end
 
-    def exec(0) do
-
-      false
-
+    defp exec(times, func, tasks \\ []) when (times > 0) do
+        task = Task.Supervisor.async(Microgun.TaskSupervisor, fn -> func end)
+        exec(times - 1, func, [task | tasks])
     end
-
+    defp exec(0, _, tasks) do
+       tasks
+    end
 end
